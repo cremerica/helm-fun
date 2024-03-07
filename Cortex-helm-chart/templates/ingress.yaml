@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "cortex-helm.name" . }}-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/cors-allow-origin: {{ template "appurl_noport" . }}
+spec:
+  rules:
+    - host: {{ template "apphost".  }}
+      http:
+        paths:
+          - path: /?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "cortex-helm.fullname" . }}-frontend-service
+                port:
+                  number: 80
+    - host: {{ template "apihost".  }}
+      http:
+        paths:
+          - path: /?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "cortex-helm.fullname" . }}-backend-service
+                port:
+                  number: 80

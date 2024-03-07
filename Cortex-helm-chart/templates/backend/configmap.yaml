@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "cortex-helm.fullname" . }}-backend-configmap
+  labels:
+    app: {{ template "cortex-helm.name" . }}-backend
+data:
+  ON_PREM_MODE: {{ .Values.app.mode }}
+  FRONTEND_HOST: {{ template "appurl" . }}
+  BACKEND_HOST: {{ template "apiurl" . }}
+  APP_CORS: {{ template "appurl" . }}
+  SPRING_PROFILES_ACTIVE: prod
+  {{ if and .Values.app.postgres.builtIn .Values.app.postgres.builtIn.enable }}DB_HOST: {{ template "cortex-helm.fullname" . }}-database
+  DB_NAME: {{ .Values.app.postgres.builtIn.name }}
+  DB_USERNAME: {{ .Values.app.postgres.builtIn.username }}
+  DB_PASSWORD: {{ .Values.app.postgres.builtIn.password }}{{ end }}
+  {{ if (.Values.app.backend.jvmConfiguration).javaOpts }}JAVA_OPTS: {{ .Values.app.backend.jvmConfiguration.javaOpts }}
+  JAVA_TOOL_OPTIONS: {{ .Values.app.backend.jvmConfiguration.javaOpts }}{{ end }}

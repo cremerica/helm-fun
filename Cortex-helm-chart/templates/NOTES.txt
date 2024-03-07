@@ -1,0 +1,14 @@
+Thanks for installing the Cortex Self-Hosted helm chart!
+
+Before you get started, make sure that you're able to generate browser-accessible DNS records for services in the cluster. Usually, this is handled by your Load Balancer of choice, which assigns hostnames to each service exposed by this helm chart.
+
+If your load balancer enables TLS by default, make sure to update the "protocol" field in the helm chart.
+
+This helm chart requires two hostnames: backend and frontend. We usually recommend api.*.com and app.*.com, respectively.
+
+The following note is generated based on the configurations you've provided in the values.yaml file.
+
+1. You can access the application at {{ template "appurl_unquoted" . }}.
+2. An onboarding flow to set up services is accessible at {{ template "appurl_unquoted" . }}/admin/onboarding.
+3. You'll automatically be logged in to workspace "{{ required "Change the workspace for your org" .Values.app.initialConfiguration.workspace }}".
+4. Auth is disabled by default, however you can enable SSO at {{ template "appurl_unquoted" . }}/admin/settings/oidc.

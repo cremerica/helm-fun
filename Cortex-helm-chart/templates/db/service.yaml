@@ -1,0 +1,13 @@
+{{ if and .Values.app.postgres.builtIn .Values.app.postgres.builtIn.enable }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "cortex-helm.fullname" . }}-database
+spec:
+  selector:
+    app: {{ template "cortex-helm.name" . }}-database
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+{{ end }}

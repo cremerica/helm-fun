@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "cortex-helm.name" . }}-deployment-backend
+  labels:
+    app: {{ template "cortex-helm.name" . }}-backend
+spec:
+  replicas: {{ required "Number of replicas for the backend must be defined" .Values.app.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "cortex-helm.name" . }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ template "cortex-helm.name" . }}-backend
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/backend/configmap.yaml") . | sha256sum }}
+    spec:
+      imagePullSecrets:
+{{ toYaml .Values.image.secrets | indent 10 }}
+      {{ if .Values.app.backend.hostAliases }}hostAliases:
+{{ toYaml .Values.app.backend.hostAliases | indent 10 }}{{end}}
+      containers:
+        - name: {{ .Chart.Name }}-backend
+          image: "ghcr.io/cortexapps/brain-backend/cortex-onprem-backend:{{.Values.image.version}}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{ if .Values.app.backend.containerConfiguration.resources }}resources:
+{{ toYaml .Values.app.backend.containerConfiguration.resources | indent 12 }}{{end}}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENABLE_BACKGROUND_JOBS
+              value: "false"  
+          envFrom:
+            - configMapRef:
+                name: {{ template "cortex-helm.fullname" . }}-backend-configmap
+            {{ if .Values.app.secret }}- secretRef:
+                name: {{ .Values.app.secret }}{{ end }}
+          volumeMounts:
+            - name: postgres-initdb-configmap
+              mountPath: /app/db/migration/V69_1__InitTenant.sql
+              subPath: V69_1__InitTenant.sql
+{{ if and .Values.app.backend.selfSignedCerts.enable .Values.app.backend.selfSignedCerts.secret }}
+            - mountPath: /opt/java/openjdk/lib/security
+              name: cacerts
+{{ end }}
+          readinessProbe:
+            initialDelaySeconds: {{ .Values.app.backend.containerConfiguration.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.backend.containerConfiguration.readinessProbe.periodSeconds }}
+            httpGet:
+              path: /actuator/health
+              port: 8080
+{{ if and .Values.app.backend.selfSignedCerts.enable .Values.app.backend.selfSignedCerts.secret }}
+      initContainers:
+        - name: init-cacerts
+          image: adoptopenjdk/openjdk11
+          command:
+          - bash
+          - -c
+          - |
+            echo "Copying existing cacert from JDK"
+            cp -R /opt/java/openjdk/lib/security/* /cacertVolumeMount/
+            echo "Importing cert into the keystore under alias 'local'"
+            keytool -import -noprompt -trustcacerts -alias "local" -file /security/tls.crt -keystore /cacertVolumeMount/cacerts -storepass changeit
+            echo "Finished importing cert"
+            keytool -list -keystore /cacertVolumeMount/cacerts -alias "local"
+          volumeMounts:
+          - mountPath: /cacertVolumeMount
+            name: cacerts
+          - mountPath: /security
+            name: tls
+{{ end }}
+      volumes:
+        - name: postgres-initdb-configmap
+          configMap:
+            name: {{ template "cortex-helm.name" . }}-deployment-database-bootstrap-config
+            items:
+              - key: bootstrap
+                path: V69_1__InitTenant.sql
+{{ if and .Values.app.backend.selfSignedCerts.enable .Values.app.backend.selfSignedCerts.secret }}
+        - name: cacerts
+          emptyDir: {}
+        - name: tls
+          secret:
+            secretName: {{ .Values.app.backend.selfSignedCerts.secret }}
+            defaultMode: 0400
+{{ end }}

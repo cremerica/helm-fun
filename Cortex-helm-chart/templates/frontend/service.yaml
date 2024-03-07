@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "cortex-helm.fullname" . }}-frontend-service
+spec:
+  selector:
+    app: {{ template "cortex-helm.name" . }}-frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: {{ .Values.app.frontend.nginx.port }}

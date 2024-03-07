@@ -1,0 +1,27 @@
+{{ if and .Values.app.postgres.builtIn .Values.app.postgres.builtIn.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "cortex-helm.name" . }}-deployment-database
+  labels:
+    app: {{ template "cortex-helm.name" . }}-database
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "cortex-helm.name" . }}-database
+  template:
+    metadata:
+      labels:
+        app: {{ template "cortex-helm.name" . }}-database
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-database
+          # we use the database image here
+          image: postgres:11.1-alpine
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: {{ template "cortex-helm.name" . }}-deployment-database-config
+{{ end }}

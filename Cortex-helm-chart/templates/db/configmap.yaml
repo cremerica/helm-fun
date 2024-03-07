@@ -1,0 +1,12 @@
+{{ if and .Values.app.postgres.builtIn .Values.app.postgres.builtIn.enable }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "cortex-helm.name" . }}-deployment-database-config
+  labels:
+    app: {{ template "cortex-helm.name" . }}-database
+data:
+  POSTGRES_DB: {{ .Values.app.postgres.builtIn.name }}
+  POSTGRES_USER: {{ .Values.app.postgres.builtIn.username }}
+  POSTGRES_PASSWORD: {{ .Values.app.postgres.builtIn.password }}
+{{ end }}

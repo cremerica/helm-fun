@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "cortex-helm.name" . }}-deployment-database-bootstrap-config
+  labels:
+    app: {{ template "cortex-helm.name" . }}-database
+data:
+  bootstrap: |
+    INSERT INTO tenants(code) VALUES ('{{ required "Change the workspace for your org" .Values.app.initialConfiguration.workspace }}');
+    INSERT INTO cortex_users(tenant_id, oauth_user_id, name, email, role) VALUES ((SELECT id FROM tenants WHERE code='{{ required "Change the workspace for your org" .Values.app.initialConfiguration.workspace }}' LIMIT 1), 'demouser', 'Demo User', '{{ required "Change the workspace for your org" .Values.app.initialConfiguration.defaultEmail }}', 'OWNER');

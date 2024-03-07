@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "cortex-helm.name" . }}-deployment-frontend-configmap
+  labels:
+    app: {{ template "cortex-helm.name" . }}-frontend
+data: 
+    config.js: |
+      window.REACT_APP_ON_PREM=true;
+      window.REACT_APP_API_URL={{ template "apiurl" . }};
